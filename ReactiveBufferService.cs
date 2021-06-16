@@ -32,7 +32,8 @@ namespace RxBufferedFunctions{
             //logStreamAll(connectedObservable);
             //logFailedHeartBeatsAcrossChannels(connectedObservable);
             //logStatusChangesRegardlessOfChannel(connectedObservable);
-            logViewersByChannel(connectedObservable);
+            //logViewersByChannel(connectedObservable);
+            logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
         }
 
         public void Store(T item){
@@ -69,7 +70,28 @@ namespace RxBufferedFunctions{
         }
 
         private void logViewersByChannel(IObservable<T> stream){
-            viewersByChannel(stream)
+            viewersByChannel(stream).Select(_ => $"===> Channel {_.Channel} has now {_.CountOfViewers} viewers")
+            .Do(item =>
+            {
+                logger.LogInformation(item);
+            })
+            .Subscribe();
+        }
+
+        private void logViewersByChannelOnceEveryXSeconds(IObservable<T> stream, int interval){
+            var viewerHeartBeats = stream.Cast<DataItem>();
+            var viewerHeartBeatsByChannel = viewerHeartBeats.GroupBy(_ => _.Channel);
+            var statusChangesByChannel = viewerHeartBeatsByChannel.Select(channelGroupedHeartBeats => statusChangesRegardlessOfChannel(channelGroupedHeartBeats.Cast<T>()));
+            var continuousViewerCountByChannel = statusChangesByChannel.Select(statusStream => statusStream.Scan(new ViewerCount(){CountOfViewers = 0}, 
+                                                                                                                (acc, status) => {
+                                                                                                                    int viewerCount = acc.CountOfViewers + (status.Status == "Online" ? 1 : -1);
+                                                                                                                    return new ViewerCount() { CountOfViewers = viewerCount, Channel = status.Channel };
+                                                                                                                }));
+            continuousViewerCountByChannel.Select(_ => _.Window(TimeSpan.FromSeconds(interval))
+                                                        .Select(_ => _.TakeLast(1))
+                                                        .Merge()
+                                                        .Select(_ => $"===> Channel {_.Channel} has now {_.CountOfViewers} viewers."))
+                                          .Merge()
             .Do(item =>
             {
                 logger.LogInformation(item);
@@ -131,7 +153,7 @@ namespace RxBufferedFunctions{
             public string Channel { get; set; }
         }
 
-        private IObservable<string> viewersByChannel(IObservable<T> stream, int expectedHeartBeatIntervalInSeconds = 10, int maxMissedHeartbeats = 1){
+        private IObservable<ViewerCount> viewersByChannel(IObservable<T> stream, int expectedHeartBeatIntervalInSeconds = 10, int maxMissedHeartbeats = 1){
             logger.LogInformation("setting up stream to aggregate viewers by channel");
 
             var viewerHeartBeats = stream.Cast<DataItem>();
@@ -142,8 +164,8 @@ namespace RxBufferedFunctions{
                                                                                                                     int viewerCount = acc.CountOfViewers + (status.Status == "Online" ? 1 : -1);
                                                                                                                     return new ViewerCount() { CountOfViewers = viewerCount, Channel = status.Channel };
                                                                                                                 }));
-            var mergedViewerCountChanges = continuousViewerCountByChannel.Merge()
-                                                                         .Select(_ => $"===> Channel {_.Channel} has now {_.CountOfViewers} viewers");
+            var mergedViewerCountChanges = continuousViewerCountByChannel.Merge();
+                                                                        //.Select(_ => $"===> Channel {_.Channel} has now {_.CountOfViewers} viewers");
             return mergedViewerCountChanges;
         }
 
