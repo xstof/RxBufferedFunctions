@@ -12,9 +12,9 @@ namespace RxBufferedFunctions
 {
     public class ReceiveRaw
     {
-
-        public ReceiveRaw(){
-
+        private readonly ReactiveBufferService<DataItem> bufferService;
+        public ReceiveRaw(ReactiveBufferService<DataItem> bufferService){
+            this.bufferService = bufferService;
         }
 
         [FunctionName("ReceiveRaw")]
@@ -23,6 +23,8 @@ namespace RxBufferedFunctions
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
+
+            bufferService.Store(receivedItem);
 
             string responseMessage = 
                 $"This HTTP triggered function executed successfully.  Device has id: {receivedItem.DeviceId}";

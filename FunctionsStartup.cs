@@ -9,6 +9,7 @@ namespace RxBufferedFunctions
     {
         public override void Configure(IFunctionsHostBuilder builder)
         {
+            builder.Services.AddSingleton<ReactiveBufferService<DataItem>>();
             // builder.Services.AddHttpClient();
 
             // builder.Services.AddSingleton<IMyService>((s) => {

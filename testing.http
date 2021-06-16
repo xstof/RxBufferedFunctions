@@ -2,6 +2,38 @@ POST http://localhost:7071/api/ReceiveRaw HTTP/1.1
 content-type: application/json
 
 {
-    "DeviceId": "test-device",
-    "Channel": "test-channel"
+    "DeviceId": "test-device-1",
+    "Channel": "test-channel-1"
+}
+###
+POST http://localhost:7071/api/ReceiveRaw HTTP/1.1
+content-type: application/json
+
+{
+    "DeviceId": "test-device-2",
+    "Channel": "test-channel-1"
+}
+###
+POST http://localhost:7071/api/ReceiveRaw HTTP/1.1
+content-type: application/json
+
+{
+    "DeviceId": "test-device-3",
+    "Channel": "test-channel-1"
+}
+###
+POST http://localhost:7071/api/ReceiveRaw HTTP/1.1
+content-type: application/json
+
+{
+    "DeviceId": "test-device-4",
+    "Channel": "test-channel-2"
+}
+###
+POST http://localhost:7071/api/ReceiveRaw HTTP/1.1
+content-type: application/json
+
+{
+    "DeviceId": "test-device-5",
+    "Channel": "test-channel-2"
 }
