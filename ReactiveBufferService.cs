@@ -31,9 +31,9 @@ namespace RxBufferedFunctions{
             // TODO: dispose of connectedObservable when stream needs to stop pushing data
             //logStreamAll(connectedObservable);
             //logFailedHeartBeatsAcrossChannels(connectedObservable);
-            logStatusChangesRegardlessOfChannel(connectedObservable);
+            //logStatusChangesRegardlessOfChannel(connectedObservable);
             //logViewersByChannel(connectedObservable);
-            //logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
+            logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
         }
 
         public void Store(T item){
