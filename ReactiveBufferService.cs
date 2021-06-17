@@ -31,9 +31,9 @@ namespace RxBufferedFunctions{
             // TODO: dispose of connectedObservable when stream needs to stop pushing data
             //logStreamAll(connectedObservable);
             //logFailedHeartBeatsAcrossChannels(connectedObservable);
-            //logStatusChangesRegardlessOfChannel(connectedObservable);
+            logStatusChangesRegardlessOfChannel(connectedObservable);
             //logViewersByChannel(connectedObservable);
-            logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
+            //logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
         }
 
         public void Store(T item){
@@ -65,7 +65,9 @@ namespace RxBufferedFunctions{
             .Do(item =>
             {
                 logger.LogInformation(item.ToString());
+                //Console.WriteLine(item.ToString());
             })
+            //.ObserveOn(System.Reactive.Concurrency.NewThreadScheduler.Default)
             .Subscribe();
         }
 
@@ -96,6 +98,7 @@ namespace RxBufferedFunctions{
             {
                 logger.LogInformation(item);
             })
+            // .ObserveOn(System.Reactive.Concurrency.NewThreadScheduler.Default)
             .Subscribe();
         }
 
@@ -117,7 +120,7 @@ namespace RxBufferedFunctions{
 
             public override string ToString()
             {
-                return $"===> Device {DeviceId} is now {Status}";
+                return $"===> Device {DeviceId} is now {Status} on channel {Channel}";
             }
         } 
 
