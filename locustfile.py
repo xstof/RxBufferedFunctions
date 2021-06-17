@@ -1,5 +1,6 @@
-# need to run from cmdline: docker run --rm --add-host host.docker.internal:host-gateway -p 8089:8089 -v $PWD:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py
-import time
+# need to run from cmdline: docker run --rm --add-host host.docker.internal:host-gateway -p 8089:8089 -v $PWD:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py SmokeTestUser
+# or: docker run --rm --add-host host.docker.internal:host-gateway -p 8089:8089 -v $PWD:/mnt/locust locustio/locust -f /mnt/locust/locustfile.py AlwaysConnectedUserBBCOne AlwaysConnectedUserBBCTwo OcassionallyConnectedUserBBCOne OcassionallyConnectedUserBBCTwo
+import time, uuid
 from locust import HttpUser, task, between
 
 class SmokeTestUser(HttpUser):
@@ -26,65 +27,81 @@ class SmokeTestUser(HttpUser):
         self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
 class AlwaysConnectedUserBBCOne(HttpUser):
-    weight = 4
+    weight = 49
     wait_time = between (1,1)
+    devicename= ""
+
+    def on_start(self):
+        self.devicename = "device-bbcone-" + str(uuid.uuid1())
 
     @task(1)
     def sendTelemetry1(self):
-        payload = {"DeviceId": "device-01","Channel": "BBCOne"}
+        payload = {"DeviceId": self.devicename,"Channel": "BBCOne"}
         self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
-    @task(1)
-    def sendTelemetry2(self):
-        payload = {"DeviceId": "device-02","Channel": "BBCOne"}
-        self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
+    # @task(1)
+    # def sendTelemetry2(self):
+    #     payload = {"DeviceId": "device-02","Channel": "BBCOne"}
+    #     self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
-    @task(1)
-    def sendTelemetry3(self):
-        payload = {"DeviceId": "device-03","Channel": "BBCOne"}
-        self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
+    # @task(1)
+    # def sendTelemetry3(self):
+    #     payload = {"DeviceId": "device-03","Channel": "BBCOne"}
+    #     self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
 class AlwaysConnectedUserBBCTwo(HttpUser):
-    weight = 4
+    weight = 49
     wait_time = between (1,1)
+    devicename= ""
+
+    def on_start(self):
+        self.devicename = "device-bbctwo-" + str(uuid.uuid1())
 
     @task(1)
     def sendTelemetry1(self):
-        payload = {"DeviceId": "device-04","Channel": "BBCTwo"}
+        payload = {"DeviceId": self.devicename,"Channel": "BBCTwo"}
         self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
-    @task(1)
-    def sendTelemetry2(self):
-        payload = {"DeviceId": "device-05","Channel": "BBCTwo"}
-        self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
+    # @task(1)
+    # def sendTelemetry2(self):
+    #     payload = {"DeviceId": "device-05","Channel": "BBCTwo"}
+    #     self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
-    @task(1)
-    def sendTelemetry3(self):
-        payload = {"DeviceId": "device-06","Channel": "BBCTwo"}
-        self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
+    # @task(1)
+    # def sendTelemetry3(self):
+    #     payload = {"DeviceId": "device-06","Channel": "BBCTwo"}
+    #     self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
 class OcassionallyConnectedUserBBCOne(HttpUser):
     weight = 1
-    wait_time = between (7,12)
+    wait_time = between (7,15)
+    devicename= ""
+
+    def on_start(self):
+        self.devicename = "device-occasional-bbcone-" + str(uuid.uuid1())
 
     @task(1)
     def sendTelemetry1(self):
-        payload = {"DeviceId": "device-07-occasional","Channel": "BBCOne"}
+        payload = {"DeviceId": self.devicename,"Channel": "BBCOne"}
         self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
 class OcassionallyConnectedUserBBCTwo(HttpUser):
     weight = 1
-    wait_time = between (7,12)
-    
-    @task(1)
-    def sendTelemetry1(self):
-        payload = {"DeviceId": "device-08-occasional","Channel": "BBCTwo"}
-        self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
+    wait_time = between (7,15)
+    devicename= ""
+
+    def on_start(self):
+        self.devicename = "device-occasional-bbctwo-" + str(uuid.uuid1())
 
     @task(1)
-    def sendTelemetry2(self):
-        payload = {"DeviceId": "device-09-occasional","Channel": "BBCTwo"}
+    def sendTelemetry1(self):
+        payload = {"DeviceId": self.devicename,"Channel": "BBCTwo"}
         self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
+
+    # @task(1)
+    # def sendTelemetry2(self):
+    #     payload = {"DeviceId": "device-09-occasional","Channel": "BBCTwo"}
+    #     self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", json=payload)
 
         # self.client.post("http://host.docker.internal:7071/api/ReceiveRaw", data={
         #     "Channel": "BBC_One",

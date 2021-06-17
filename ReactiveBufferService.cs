@@ -37,7 +37,9 @@ namespace RxBufferedFunctions{
         }
 
         public void Store(T item){
-            observer.OnNext(item);
+            if(observer != null){
+                observer.OnNext(item);
+            }
         }
 
         private void logStreamAll(IObservable<T> stream){
