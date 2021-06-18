@@ -1,0 +1,14 @@
+RESOURCE_GROUP="xstof-rxfun"
+APP_NAME="xstof-rxbufferedfn"
+BICEP_FILE="rxfunctions.bicep"
+LOCATION="westeurope"
+
+# create a resource group
+az group create -n $RESOURCE_GROUP -l $LOCATION
+
+# deploy the bicep file directly
+az deployment group create \
+  --name mybicepdeployment \
+  --resource-group $RESOURCE_GROUP \
+  --template-file $BICEP_FILE \
+  --parameters "appName=$APP_NAME"
