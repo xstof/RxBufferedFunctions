@@ -8,7 +8,7 @@
             }
         },
         "logLevel": {
-            "Function": "Warning",
+            "Function": "Error",
             "RxBufferedFunctions.ReactiveBufferService": "Information"
         }
     }
