@@ -5,6 +5,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -13,11 +14,15 @@ namespace ReactiveWebApp{
     public class ReactiveBufferService<T> where T: class {
 
         private readonly ILogger<ReactiveBufferService<T>> logger;
+        private ConcurrentQueue<T> queue;
         private IObservable<T> stream;
         private IObserver<T> observer = null;
+        private bool isInitialized = false;
 
         public ReactiveBufferService(ILogger<ReactiveBufferService<T>> logger){
+            
             this.logger = logger;
+            this.queue = new ConcurrentQueue<T>();
 
             // Initialize inner Observable - at this point there are no Observers yet so, we don't have an instance of Observer to push data towards
             var innerObservable = initStream();
@@ -38,9 +43,10 @@ namespace ReactiveWebApp{
         }
 
         public void Store(T item){
-            if (observer != null)
+            if (isInitialized)
             {
-                observer.OnNext(item);
+                //observer.OnNext(item);
+                queue.Enqueue(item);
             }
         }
 
@@ -85,6 +91,8 @@ namespace ReactiveWebApp{
         }
 
         private void logViewersByChannelOnceEveryXSeconds(IObservable<T> stream, int interval){
+            logger.LogInformation($"setting up stream to log viewers by channel every {interval} seconds");
+
             var viewerHeartBeats = stream.Cast<DataItem>();
             var viewerHeartBeatsByChannel = viewerHeartBeats.GroupBy(_ => _.Channel);
             var statusChangesByChannel = viewerHeartBeatsByChannel.Select(channelGroupedHeartBeats => statusChangesRegardlessOfChannel(channelGroupedHeartBeats.Cast<T>()));
@@ -98,11 +106,11 @@ namespace ReactiveWebApp{
                                                         .Merge()
                                                         .Select(_ => $"===> Channel {_.Channel} has now {_.CountOfViewers} viewers."))
                                           .Merge()
+            .ObserveOn(new EventLoopScheduler())
             .Do(item =>
             {
-                logger.LogInformation(item);
+                logger.LogInformation($"[on thread {System.Threading.Thread.CurrentThread.ManagedThreadId} {item}]");
             })
-            .ObserveOn(NewThreadScheduler.Default)
             .Subscribe();
         }
 
@@ -177,7 +185,7 @@ namespace ReactiveWebApp{
         }
 
 
-        private Subject<T> innerSubject;
+
         /// <summary>
         /// Initializes the RX stream by creating an Observable.  In this case a Subject is used.
         /// </summary>
@@ -188,9 +196,39 @@ namespace ReactiveWebApp{
         /// Note: the Observer will only become available when the Observable is subscribed.
         /// </remarks>
         private IObservable<T> initStream(){
-            var innerSubject = new Subject<T>();
-            this.observer = innerSubject;
-            return innerSubject;
+            // var innerSubject = new Subject<T>();
+            // this.observer = innerSubject;
+            // innerSubject.SubscribeOn(NewThreadScheduler.Default);
+            // innerSubject.ObserveOn(Scheduler.ThreadPool);
+
+            var o = Observable.Create<T>( (IObserver<T> observer) =>
+            {
+                logger.LogInformation($"subscribed on thread {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+
+                Thread queueConsumptionThread = new Thread(this.pullQueue);
+                queueConsumptionThread.Start(observer);
+                return Disposable.Empty;
+            });
+
+            isInitialized = true;
+
+            return o;
+            //TODO stop thread when unsubscribed
+        }
+
+        
+        private void pullQueue (object o){
+            logger.LogInformation($"Starting to pull from queue on thread: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
+            var observer = (IObserver<T>)o;
+
+            while (true)
+            {
+                T newItemFromQueue;
+                if (queue.TryDequeue(out newItemFromQueue))
+                {
+                    observer.OnNext(newItemFromQueue);
+                }
+            }
         }
 
     }

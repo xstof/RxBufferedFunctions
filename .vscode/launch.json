@@ -1,6 +1,17 @@
 {
   "version": "0.2.0",
   "configurations": [
+  {
+    "name": ".NET Core Launch (console)",
+    "type": "coreclr",
+    "request": "launch",
+    "preLaunchTask": "build",
+    "program": "${workspaceFolder}/AspNet/ReactiveWebApp/bin/Debug/net5.0/ReactiveWebApp.dll",
+    "args": [],
+    "cwd": "${workspaceFolder}",
+    "stopAtEntry": false,
+    "console": "internalConsole"
+  },
     {
       "name": "Attach to .NET Functions",
       "type": "coreclr",
