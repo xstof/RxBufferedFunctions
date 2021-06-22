@@ -187,7 +187,7 @@ namespace ReactiveWebApp{
 
 
         /// <summary>
-        /// Initializes the RX stream by creating an Observable.  In this case a Subject is used.
+        /// Initializes the RX stream by creating an Observable.
         /// </summary>
         /// <returns>
         /// Returns an inner-Observable which can be subscribed to.
@@ -196,39 +196,23 @@ namespace ReactiveWebApp{
         /// Note: the Observer will only become available when the Observable is subscribed.
         /// </remarks>
         private IObservable<T> initStream(){
-            // var innerSubject = new Subject<T>();
-            // this.observer = innerSubject;
-            // innerSubject.SubscribeOn(NewThreadScheduler.Default);
-            // innerSubject.ObserveOn(Scheduler.ThreadPool);
 
-            var o = Observable.Create<T>( (IObserver<T> observer) =>
+            var o = Observable.Create<T>((IObserver<T> observer, CancellationToken token) =>
             {
-                logger.LogInformation($"subscribed on thread {System.Threading.Thread.CurrentThread.ManagedThreadId}");
-
-                Thread queueConsumptionThread = new Thread(this.pullQueue);
-                queueConsumptionThread.Start(observer);
-                return Disposable.Empty;
+                return Task.Run(() =>
+                {
+                    T nextItem;
+                    while (! token.IsCancellationRequested){
+                        if(queue.TryDequeue(out nextItem)){
+                            observer.OnNext(nextItem);
+                        }
+                    }
+                }, token);
             });
 
             isInitialized = true;
 
-            return o;
-            //TODO stop thread when unsubscribed
-        }
-
-        
-        private void pullQueue (object o){
-            logger.LogInformation($"Starting to pull from queue on thread: {System.Threading.Thread.CurrentThread.ManagedThreadId}");
-            var observer = (IObserver<T>)o;
-
-            while (true)
-            {
-                T newItemFromQueue;
-                if (queue.TryDequeue(out newItemFromQueue))
-                {
-                    observer.OnNext(newItemFromQueue);
-                }
-            }
+            return o.ObserveOn(NewThreadScheduler.Default);
         }
 
     }
