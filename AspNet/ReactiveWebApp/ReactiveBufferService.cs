@@ -11,7 +11,27 @@ using Microsoft.Extensions.Logging;
 
 namespace ReactiveWebApp{
 
-    public class ReactiveBufferService<T> where T: class {
+    public class DeviceStatus {
+            public string DeviceId { get; set; }
+            public string Status { get; set;  }
+            public string Channel { get; set; }
+
+            public override string ToString()
+            {
+                return $"===> Device {DeviceId} is now {Status} on channel {Channel}";
+            }
+    }
+
+    public class ViewerCount{
+        public int CountOfViewers { get; set; }
+        public string Channel { get; set; }
+    }
+
+    public interface IStreamViewerCounts{
+        public IObservable<ViewerCount> GetStreamOfViewerCounts(int interval);
+    }
+
+    public class ReactiveBufferService<T> : IStreamViewerCounts where T: class {
 
         private readonly ILogger<ReactiveBufferService<T>> logger;
         private ConcurrentQueue<T> queue;
@@ -24,6 +44,8 @@ namespace ReactiveWebApp{
             this.logger = logger;
             this.queue = new ConcurrentQueue<T>();
 
+            logger.LogInformation("constructing ReactiveBufferService");
+
             // Initialize inner Observable - at this point there are no Observers yet so, we don't have an instance of Observer to push data towards
             var innerObservable = initStream();
             logger.LogInformation("initialized inner-observable - no subscriptions yet");
@@ -32,14 +54,16 @@ namespace ReactiveWebApp{
             var connectedObservable           = innerObservable.Publish();          // Ensure subscription is shared amongst all Observers
             logger.LogInformation("published inner-observable");
             var connectedObservableDisposable = connectedObservable.Connect();      // Connect right away so all subscribers as of now get the same data pushed
+            stream = connectedObservable;
             logger.LogInformation("connected inner-observable");
+            logger.LogInformation("constructed ReactiveBufferService");
 
             // TODO: dispose of connectedObservable when stream needs to stop pushing data
             //logStreamAll(connectedObservable);
             //logFailedHeartBeatsAcrossChannels(connectedObservable);
             //logStatusChangesRegardlessOfChannel(connectedObservable);
             //logViewersByChannel(connectedObservable);
-            logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
+            //logViewersByChannelOnceEveryXSeconds(connectedObservable, 5);
         }
 
         public void Store(T item){
@@ -125,17 +149,6 @@ namespace ReactiveWebApp{
                                  .Merge();
         }
 
-        private class DeviceStatus {
-            public string DeviceId { get; set; }
-            public string Status { get; set;  }
-            public string Channel { get; set; }
-
-            public override string ToString()
-            {
-                return $"===> Device {DeviceId} is now {Status} on channel {Channel}";
-            }
-        } 
-
         private IObservable<DeviceStatus> statusChangesRegardlessOfChannel(IObservable<T> stream, int expectedHeartBeatIntervalInSeconds = 10, int maxMissedHeartbeats = 1) {
             logger.LogInformation("setting up stream to calculate viewer status across channels");
 
@@ -161,11 +174,6 @@ namespace ReactiveWebApp{
                                                  .Merge();
 
             return combinedStatusStreamForAllViewersDistinctUntilChanged;
-        }
-
-        private class ViewerCount{
-            public int CountOfViewers { get; set; }
-            public string Channel { get; set; }
         }
 
         private IObservable<ViewerCount> viewersByChannel(IObservable<T> stream, int expectedHeartBeatIntervalInSeconds = 10, int maxMissedHeartbeats = 1){
@@ -196,15 +204,19 @@ namespace ReactiveWebApp{
         /// Note: the Observer will only become available when the Observable is subscribed.
         /// </remarks>
         private IObservable<T> initStream(){
-
+            logger.LogInformation("initializing stream");
             var o = Observable.Create<T>((IObserver<T> observer, CancellationToken token) =>
             {
+                logger.LogInformation("creating observable in initStream");
                 return Task.Run(() =>
                 {
                     T nextItem;
                     while (! token.IsCancellationRequested){
                         if(queue.TryDequeue(out nextItem)){
                             observer.OnNext(nextItem);
+                        }
+                        else{
+                            Thread.Sleep(100);
                         }
                     }
                 }, token);
@@ -213,8 +225,28 @@ namespace ReactiveWebApp{
             isInitialized = true;
 
             return o.ObserveOn(NewThreadScheduler.Default);
+            //return o;
         }
 
+        public IObservable<ViewerCount> GetStreamOfViewerCounts(int intervalInSeconds)
+        {
+            logger.LogInformation($"Getting stream of viewer counts for an interval of {intervalInSeconds} seconds");
+
+            var viewerHeartBeats = stream.Cast<DataItem>();
+            var viewerHeartBeatsByChannel = viewerHeartBeats.GroupBy(_ => _.Channel);
+            var statusChangesByChannel = viewerHeartBeatsByChannel.Select(channelGroupedHeartBeats => statusChangesRegardlessOfChannel(channelGroupedHeartBeats.Cast<T>()));
+            var continuousViewerCountByChannel = statusChangesByChannel.Select(statusStream => statusStream.Scan(new ViewerCount(){CountOfViewers = 0}, 
+                                                                                                                (acc, status) => {
+                                                                                                                    int viewerCount = acc.CountOfViewers + (status.Status == "Online" ? 1 : -1);
+                                                                                                                    return new ViewerCount() { CountOfViewers = viewerCount, Channel = status.Channel };
+                                                                                                                }));
+            var streamOfViewerCounts = continuousViewerCountByChannel.Select(_ => _.Window(TimeSpan.FromSeconds(intervalInSeconds))
+                                                        .Select(_ => _.TakeLast(1))
+                                                        .Merge())
+                                          .Merge()
+                                          .ObserveOn(new EventLoopScheduler());
+            return streamOfViewerCounts;
+        }
     }
 
 }

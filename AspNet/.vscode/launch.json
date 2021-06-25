@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/Debug/net5.0/ReactiveWebApp.dll",
+            "program": "${workspaceFolder}/ReactiveWebApp/bin/Debug/net5.0/ReactiveWebApp.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,

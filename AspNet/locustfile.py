@@ -7,7 +7,7 @@ import time, uuid
 from locust import HttpUser, task, between
 
 class AlwaysConnectedUserBBCOne(HttpUser):
-    weight = 49
+    weight = 24
     wait_time = between (1,1)
     devicename= ""
 
@@ -20,7 +20,7 @@ class AlwaysConnectedUserBBCOne(HttpUser):
         self.client.post("/api/ReceiveRaw", json=payload)
 
 class AlwaysConnectedUserBBCTwo(HttpUser):
-    weight = 49
+    weight = 24
     wait_time = between (1,1)
     devicename= ""
 
@@ -32,8 +32,35 @@ class AlwaysConnectedUserBBCTwo(HttpUser):
         payload = {"DeviceId": self.devicename,"Channel": "BBCTwo"}
         self.client.post("/api/ReceiveRaw", json=payload)
 
+class AlwaysConnectedUserCNN(HttpUser):
+    weight = 24
+    wait_time = between (1,1)
+    devicename= ""
+
+    def on_start(self):
+        self.devicename = "device-cnn-" + str(uuid.uuid1())
+
+    @task(1)
+    def sendTelemetry1(self):
+        payload = {"DeviceId": self.devicename,"Channel": "CNN"}
+        self.client.post("/api/ReceiveRaw", json=payload)
+
+class AlwaysConnectedUserDiscovery(HttpUser):
+    weight = 24
+    wait_time = between (1,1)
+    devicename= ""
+
+    def on_start(self):
+        self.devicename = "device-discovery-" + str(uuid.uuid1())
+
+    @task(1)
+    def sendTelemetry1(self):
+        payload = {"DeviceId": self.devicename,"Channel": "Discovery"}
+        self.client.post("/api/ReceiveRaw", json=payload)
+
+
 class OcassionallyConnectedUserBBCOne(HttpUser):
-    weight = 1
+    weight = 2
     wait_time = between (7,15)
     devicename= ""
 
@@ -46,7 +73,7 @@ class OcassionallyConnectedUserBBCOne(HttpUser):
         self.client.post("/api/ReceiveRaw", json=payload)
 
 class OcassionallyConnectedUserBBCTwo(HttpUser):
-    weight = 1
+    weight = 2
     wait_time = between (7,15)
     devicename= ""
 

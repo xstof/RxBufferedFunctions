@@ -10,7 +10,7 @@
             }, 
             "args": [
                 "build",
-                "dReactiveWebApp.csproj",
+                "ReactiveWebApp.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -56,7 +56,7 @@
         {
             "label": "run locust on localhost",
             "type": "shell",
-            "command": "docker run --rm --add-host host.docker.internal:host-gateway -p 8089:8089 -v ${workspaceFolder}:/mnt/locust locustio/locust --host http://host.docker.internal:5000 -f /mnt/locust/locustfile.py AlwaysConnectedUserBBCOne AlwaysConnectedUserBBCTwo OcassionallyConnectedUserBBCOne OcassionallyConnectedUserBBCTwo",
+            "command": "docker run --rm --add-host host.docker.internal:host-gateway -p 8089:8089 -v ${workspaceFolder}:/mnt/locust locustio/locust --host http://host.docker.internal:5000 -f /mnt/locust/locustfile.py AlwaysConnectedUserBBCOne AlwaysConnectedUserBBCTwo OcassionallyConnectedUserBBCOne OcassionallyConnectedUserBBCTwo AlwaysConnectedUserCNN AlwaysConnectedUserDiscovery",
             "dependsOn": [
                 "open locust in edge"
             ],

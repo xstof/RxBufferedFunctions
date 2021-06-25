@@ -1,5 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 
 namespace ReactiveWebApp.Controllers{
@@ -7,7 +8,6 @@ namespace ReactiveWebApp.Controllers{
     [ApiController]
     [Route("api/ReceiveRaw")]
     public class RxEventProcessorController : ControllerBase{
-
         private readonly ILogger<RxEventProcessorController> logger;
         private readonly ReactiveBufferService<DataItem> buffer;
 

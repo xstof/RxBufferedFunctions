@@ -24,5 +24,5 @@ Content-Type: application/json
 
 {
     "DeviceId": "test-device-3",
-    "Channel": "test-channel"
+    "Channel": "test-channel-2"
 }

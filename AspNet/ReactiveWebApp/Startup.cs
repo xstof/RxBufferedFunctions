@@ -26,19 +26,29 @@ namespace ReactiveWebApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<ReactiveBufferService<DataItem>>();
+            services.AddSingleton(typeof(IStreamViewerCounts), prov => prov.GetService<ReactiveBufferService<DataItem>>());
+            
 
-            services.AddControllers();
+            services.AddControllersWithViews();
+            //services.AddControllers();
+            services.AddSignalR();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ReactiveWebApp", Version = "v1" });
             });
 
-            services.AddSingleton<ReactiveBufferService<DataItem>>();
+            services.AddSingleton<SignalRDispatcherService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(ILogger<Startup> logger, IApplicationBuilder app, IWebHostEnvironment env)
         {
+            logger.LogInformation("Configure");
+            app.UseSignalRDispatcher();
+            //app.ApplicationServices.GetService<SignalRDispatcherService>().SubscribeToBufferService();
+            //logger.LogInformation("Dispatcher initialized");
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -54,8 +64,15 @@ namespace ReactiveWebApp
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapDefaultControllerRoute();
                 endpoints.MapControllers();
+                // endpoints.MapControllerRoute(
+                //     name: "default",
+                //     pattern: "{controller=Home}/{action=Index}/{id?}");
+                endpoints.MapHub<SignalRHub>("/signalrhub");
             });
+
+            
         }
     }
 }
