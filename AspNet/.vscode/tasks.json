@@ -1,0 +1,75 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "options": {
+                "cwd": "${workspaceFolder}/ReactiveWebApp"
+            }, 
+            "args": [
+                "build",
+                "dReactiveWebApp.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "publish",
+            "command": "dotnet",
+            "type": "process",
+            "options": {
+                "cwd": "${workspaceFolder}/ReactiveWebApp"
+            }, 
+            "args": [
+                "publish",
+                "dReactiveWebApp.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "watch",
+            "command": "dotnet",
+            "type": "process",
+            "options": {
+                "cwd": "${workspaceFolder}/ReactiveWebApp"
+            }, 
+            "args": [
+                "watch",
+                "run",
+                "ReactiveWebApp.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "open locust in edge",
+            "type": "shell",
+            "command": "wslview http://localhost:8089/",
+            "problemMatcher": []
+        },
+        {
+            "label": "run locust on localhost",
+            "type": "shell",
+            "command": "docker run --rm --add-host host.docker.internal:host-gateway -p 8089:8089 -v ${workspaceFolder}:/mnt/locust locustio/locust --host http://host.docker.internal:5000 -f /mnt/locust/locustfile.py AlwaysConnectedUserBBCOne AlwaysConnectedUserBBCTwo OcassionallyConnectedUserBBCOne OcassionallyConnectedUserBBCTwo",
+            "dependsOn": [
+                "open locust in edge"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "test with locust",
+            "type": "shell",
+            "dependsOn": [
+                "watch",
+                "run locust on localhost"
+            ],
+            "problemMatcher": []
+        }
+    ]
+}
